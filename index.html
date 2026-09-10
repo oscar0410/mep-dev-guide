@@ -138,7 +138,7 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
 
 <span class="k">create table</span> messages (
   id           <span class="f">bigint</span> <span class="k">generated always as identity primary key</span>,
-  source       <span class="f">text</span> <span class="k">not null references</span> participants(endpoint),
+  source       <span class="f">jsonb</span> <span class="k">not null</span>,           <span class="c">-- 來源座標 {endpoint, line_*};endpoint 須已註冊,由 ingress 校驗</span>
   payload      <span class="f">jsonb</span> <span class="k">not null</span>,            <span class="c">-- 黑箱,原樣存</span>
   received_at  <span class="f">timestamptz</span> <span class="k">not null default</span> now()
 );
@@ -172,9 +172,9 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
 <span class="p">X-Timestamp</span>: 1736500000
 
 {
-  <span class="k">"source"</span>: <span class="s">"ODOO"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"line_group_id"</span>: <span class="s">"Cabc123"</span>, <span class="k">"line_user_id"</span>: <span class="s">"Uabc123"</span> },
   <span class="k">"targets"</span>: [
-    { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"push"</span>, <span class="k">"line_group_ids"</span>: [<span class="s">"C001"</span>] },
+    { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
     { <span class="k">"endpoint"</span>: <span class="s">"WEATHER_APP"</span> }
   ],
   <span class="k">"payload"</span>: { <span class="c">/* 黑箱 */</span> }
@@ -182,15 +182,17 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
     <p class="fname">Handler 流程</p>
     <pre><span class="k">def</span> <span class="f">ingress</span>(req):
     raw = req.raw_body                              <span class="c"># 用原始 bytes 驗簽,不要先反序列化再組回去</span>
-    p   = participants[req.header[<span class="s">"source?"</span>] or body.source]
+    msg = parse_json(raw)                           <span class="c"># 先解出 source.endpoint 以取對應 secret</span>
+    p   = participants.get(msg.source.endpoint)
+    <span class="k">if</span> p <span class="k">is None or not</span> p.active:            <span class="c"># 來源未註冊/停用 → 422</span>
+        <span class="k">return</span> <span class="n">422</span>
     <span class="k">if</span> <span class="k">not</span> verify_signature(p.secret, req.header[<span class="s">"X-Timestamp"</span>], raw):
         <span class="k">return</span> <span class="n">401</span>
     <span class="k">if</span> abs(now() - X_Timestamp) &gt; SIGNATURE_SKEW:      <span class="c"># 防重放</span>
         <span class="k">return</span> <span class="n">401</span>
-    msg = parse_json(raw)
     <span class="k">if</span> <span class="k">not</span> validate(msg, InboundEnvelope):            <span class="c"># JSON Schema 校驗</span>
         <span class="k">return</span> <span class="n">400</span>
-    <span class="k">for</span> t <span class="k">in</span> msg.targets:                             <span class="c"># 語意校驗</span>
+    <span class="k">for</span> t <span class="k">in</span> msg.targets:                             <span class="c"># 每個 target 的 endpoint 須已註冊</span>
         <span class="k">if</span> t.endpoint <span class="k">not in</span> participants <span class="k">or</span> <span class="k">not</span> active:
             <span class="k">return</span> <span class="n">422</span>                              <span class="c"># 未註冊/停用 → 整批退</span>
     <span class="c"># 落地(單一 transaction)</span>
@@ -227,7 +229,7 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
 
 {
   <span class="k">"event_id"</span>: <span class="s">"550e8400-..."</span>,
-  <span class="k">"source"</span>: <span class="s">"ODOO"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
   <span class="k">"target"</span>: { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"push"</span>, <span class="k">"line_group_ids"</span>: [<span class="s">"C001"</span>] },
   <span class="k">"payload"</span>: { <span class="c">/* 原封不動 */</span> },
   <span class="k">"occurred_at"</span>: <span class="s">"2026-09-10T08:30:00Z"</span>
