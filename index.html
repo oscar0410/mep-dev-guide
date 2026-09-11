@@ -1,120 +1,534 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MEP — 開發文件 (Developer Guide)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#F3F4F6;--paper:#FFFFFF;--ink:#17212E;--ink-soft:#52606D;--ink-faint:#8A94A2;
-    --line:#DFE3E9;--line-soft:#EBEEF2;--brand:#22384F;
-    --a:#2C6E9B;--a-bg:#EAF2F8;--ok:#17876A;--ok-bg:#E7F3EE;--warn:#A96A1B;--warn-bg:#FBF3E6;--danger:#B0413A;--danger-bg:#FAEEED;
-    --code-bg:#1C2A3A;--code-ink:#DCE4EE;--shadow:0 1px 2px rgba(23,33,46,.04),0 8px 28px rgba(23,33,46,.06);
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif;font-size:16px;line-height:1.68;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 26px}
-  .cover{background:var(--brand);color:#EAEEF3;padding:52px 0 42px;position:relative;overflow:hidden}
-  .cover::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:26px 26px;pointer-events:none}
-  .cover .wrap{position:relative;z-index:1}
-  .kick{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.04em;color:#8FB2CE;margin:0 0 16px}
-  .cover h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(26px,4.5vw,40px);line-height:1.12;margin:0 0 12px}
-  .cover .lede{font-size:16px;max-width:66ch;color:#C4D2DE;margin:0}
-  .shell{display:grid;grid-template-columns:216px 1fr;gap:40px;align-items:start;padding:40px 0 90px}
-  nav.toc{position:sticky;top:22px;font-size:13.5px}
-  nav.toc .t{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-faint);margin:0 0 12px;padding-left:12px}
-  nav.toc a{display:block;color:var(--ink-soft);text-decoration:none;padding:5px 12px;border-left:2px solid var(--line);line-height:1.4;transition:all .15s}
-  nav.toc a:hover{color:var(--a);border-color:var(--a);background:#fff}
-  main{min-width:0}
-  section{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:32px 36px;margin:0 0 22px;box-shadow:var(--shadow)}
-  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:23px;margin:0 0 4px;display:flex;align-items:baseline;gap:12px}
-  h2 .no{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--a);font-weight:500}
-  .sub{color:var(--ink-soft);font-size:15px;margin:0 0 22px;padding-bottom:16px;border-bottom:1px solid var(--line-soft)}
-  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin:26px 0 10px}
-  p{margin:0 0 13px}strong{font-weight:600}
-  code{font-family:'JetBrains Mono',monospace;font-size:.86em;background:var(--line-soft);padding:1.5px 6px;border-radius:5px;color:#294056}
-  ul,ol{margin:0 0 14px;padding-left:22px}li{margin:0 0 7px}
-  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.62;margin:0 0 14px}
-  pre .k{color:#7FB0D8}pre .s{color:#9BD1A4}pre .c{color:#6B7C8E}pre .n{color:#D8A26B}pre .p{color:#D8A26B}pre .f{color:#C9A6E8}
-  .fname{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-faint);margin:0 0 6px}
-  .method{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:5px;background:var(--ok-bg);color:var(--ok);margin-right:8px}
-  .note{border-radius:10px;padding:14px 17px;margin:0 0 16px;border-left:3px solid;font-size:14.5px}
-  .note p:last-child{margin-bottom:0}
-  .note .lbl{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;display:block;margin-bottom:4px}
-  .note.a{background:var(--a-bg);border-color:var(--a)}.note.a .lbl{color:var(--a)}
-  .note.warn{background:var(--warn-bg);border-color:var(--warn)}.note.warn .lbl{color:var(--warn)}
-  .note.ok{background:var(--ok-bg);border-color:var(--ok)}.note.ok .lbl{color:var(--ok)}
-  .tbl-wrap{overflow-x:auto;margin:0 0 14px;border:1px solid var(--line);border-radius:10px}
-  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
-  th{background:#F7F9FB;text-align:left;font-weight:600;font-size:12px;color:var(--ink-soft);padding:10px 13px;border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace}
-  td{padding:10px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
-  tr:last-child td{border-bottom:none}
-  td.hd{font-weight:600;white-space:nowrap;color:var(--brand)}
-  td code{font-size:12px}
-  .st{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;padding:1px 8px;border-radius:20px}
-  .st.p{background:var(--a-bg);color:var(--a)}.st.s{background:var(--ok-bg);color:var(--ok)}.st.d{background:var(--danger-bg);color:var(--danger)}
-  .diagram{background:#FBFCFD;border:1px solid var(--line);border-radius:12px;padding:20px;margin:0 0 14px;text-align:center}
-  footer{color:var(--ink-faint);font-size:13px;text-align:center;padding:26px 0 46px}
-  @media(max-width:860px){.shell{grid-template-columns:1fr;gap:0}nav.toc{display:none}section{padding:24px 20px}.wrap{padding:0 16px}}
-  @media print{body{background:#fff}.cover{background:#fff;color:var(--ink);border-bottom:2px solid var(--brand)}.cover::after{display:none}.kick{color:var(--a)}.cover h1{color:var(--ink)}.cover .lede{color:var(--ink-soft)}nav.toc{display:none}.shell{grid-template-columns:1fr;padding-top:20px}section{box-shadow:none;break-inside:avoid}pre,table,.note,.diagram{break-inside:avoid}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEP — 開發文件 (Developer Guide)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F3F4F6;
+      --paper: #FFFFFF;
+      --ink: #17212E;
+      --ink-soft: #52606D;
+      --ink-faint: #8A94A2;
+      --line: #DFE3E9;
+      --line-soft: #EBEEF2;
+      --brand: #22384F;
+      --a: #2C6E9B;
+      --a-bg: #EAF2F8;
+      --ok: #17876A;
+      --ok-bg: #E7F3EE;
+      --warn: #A96A1B;
+      --warn-bg: #FBF3E6;
+      --danger: #B0413A;
+      --danger-bg: #FAEEED;
+      --code-bg: #1C2A3A;
+      --code-ink: #DCE4EE;
+      --shadow: 0 1px 2px rgba(23, 33, 46, .04), 0 8px 28px rgba(23, 33, 46, .06);
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      font-size: 16px;
+      line-height: 1.68;
+      -webkit-font-smoothing: antialiased
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 26px
+    }
+
+    .cover {
+      background: var(--brand);
+      color: #EAEEF3;
+      padding: 52px 0 42px;
+      position: relative;
+      overflow: hidden
+    }
+
+    .cover::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+      background-size: 26px 26px;
+      pointer-events: none
+    }
+
+    .cover .wrap {
+      position: relative;
+      z-index: 1
+    }
+
+    .kick {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      letter-spacing: .04em;
+      color: #8FB2CE;
+      margin: 0 0 16px
+    }
+
+    .cover h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: clamp(26px, 4.5vw, 40px);
+      line-height: 1.12;
+      margin: 0 0 12px
+    }
+
+    .cover .lede {
+      font-size: 16px;
+      max-width: 66ch;
+      color: #C4D2DE;
+      margin: 0
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 216px 1fr;
+      gap: 40px;
+      align-items: start;
+      padding: 40px 0 90px
+    }
+
+    nav.toc {
+      position: sticky;
+      top: 22px;
+      font-size: 13.5px
+    }
+
+    nav.toc .t {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-faint);
+      margin: 0 0 12px;
+      padding-left: 12px
+    }
+
+    nav.toc a {
+      display: block;
+      color: var(--ink-soft);
+      text-decoration: none;
+      padding: 5px 12px;
+      border-left: 2px solid var(--line);
+      line-height: 1.4;
+      transition: all .15s
+    }
+
+    nav.toc a:hover {
+      color: var(--a);
+      border-color: var(--a);
+      background: #fff
+    }
+
+    main {
+      min-width: 0
+    }
+
+    section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 32px 36px;
+      margin: 0 0 22px;
+      box-shadow: var(--shadow)
+    }
+
+    h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 23px;
+      margin: 0 0 4px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px
+    }
+
+    h2 .no {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      color: var(--a);
+      font-weight: 500
+    }
+
+    .sub {
+      color: var(--ink-soft);
+      font-size: 15px;
+      margin: 0 0 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line-soft)
+    }
+
+    h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 17px;
+      margin: 26px 0 10px
+    }
+
+    p {
+      margin: 0 0 13px
+    }
+
+    strong {
+      font-weight: 600
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .86em;
+      background: var(--line-soft);
+      padding: 1.5px 6px;
+      border-radius: 5px;
+      color: #294056
+    }
+
+    ul,
+    ol {
+      margin: 0 0 14px;
+      padding-left: 22px
+    }
+
+    li {
+      margin: 0 0 7px
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: var(--code-ink);
+      padding: 18px 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.62;
+      margin: 0 0 14px
+    }
+
+    pre .k {
+      color: #7FB0D8
+    }
+
+    pre .s {
+      color: #9BD1A4
+    }
+
+    pre .c {
+      color: #6B7C8E
+    }
+
+    pre .n {
+      color: #D8A26B
+    }
+
+    pre .p {
+      color: #D8A26B
+    }
+
+    pre .f {
+      color: #C9A6E8
+    }
+
+    .fname {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--ink-faint);
+      margin: 0 0 6px
+    }
+
+    .method {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: var(--ok-bg);
+      color: var(--ok);
+      margin-right: 8px
+    }
+
+    .note {
+      border-radius: 10px;
+      padding: 14px 17px;
+      margin: 0 0 16px;
+      border-left: 3px solid;
+      font-size: 14.5px
+    }
+
+    .note p:last-child {
+      margin-bottom: 0
+    }
+
+    .note .lbl {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 13.5px;
+      display: block;
+      margin-bottom: 4px
+    }
+
+    .note.a {
+      background: var(--a-bg);
+      border-color: var(--a)
+    }
+
+    .note.a .lbl {
+      color: var(--a)
+    }
+
+    .note.warn {
+      background: var(--warn-bg);
+      border-color: var(--warn)
+    }
+
+    .note.warn .lbl {
+      color: var(--warn)
+    }
+
+    .note.ok {
+      background: var(--ok-bg);
+      border-color: var(--ok)
+    }
+
+    .note.ok .lbl {
+      color: var(--ok)
+    }
+
+    .tbl-wrap {
+      overflow-x: auto;
+      margin: 0 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      min-width: 560px
+    }
+
+    th {
+      background: #F7F9FB;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--ink-soft);
+      padding: 10px 13px;
+      border-bottom: 1px solid var(--line);
+      font-family: 'JetBrains Mono', monospace
+    }
+
+    td {
+      padding: 10px 13px;
+      border-bottom: 1px solid var(--line-soft);
+      vertical-align: top
+    }
+
+    tr:last-child td {
+      border-bottom: none
+    }
+
+    td.hd {
+      font-weight: 600;
+      white-space: nowrap;
+      color: var(--brand)
+    }
+
+    td code {
+      font-size: 12px
+    }
+
+    .st {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 1px 8px;
+      border-radius: 20px
+    }
+
+    .st.p {
+      background: var(--a-bg);
+      color: var(--a)
+    }
+
+    .st.s {
+      background: var(--ok-bg);
+      color: var(--ok)
+    }
+
+    .st.d {
+      background: var(--danger-bg);
+      color: var(--danger)
+    }
+
+    .diagram {
+      background: #FBFCFD;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 0 0 14px;
+      text-align: center
+    }
+
+    footer {
+      color: var(--ink-faint);
+      font-size: 13px;
+      text-align: center;
+      padding: 26px 0 46px
+    }
+
+    @media(max-width:860px) {
+      .shell {
+        grid-template-columns: 1fr;
+        gap: 0
+      }
+
+      nav.toc {
+        display: none
+      }
+
+      section {
+        padding: 24px 20px
+      }
+
+      .wrap {
+        padding: 0 16px
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff
+      }
+
+      .cover {
+        background: #fff;
+        color: var(--ink);
+        border-bottom: 2px solid var(--brand)
+      }
+
+      .cover::after {
+        display: none
+      }
+
+      .kick {
+        color: var(--a)
+      }
+
+      .cover h1 {
+        color: var(--ink)
+      }
+
+      .cover .lede {
+        color: var(--ink-soft)
+      }
+
+      nav.toc {
+        display: none
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+        padding-top: 20px
+      }
+
+      section {
+        box-shadow: none;
+        break-inside: avoid
+      }
+
+      pre,
+      table,
+      .note,
+      .diagram {
+        break-inside: avoid
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<header class="cover">
-  <div class="wrap">
-    <p class="kick">MEP · DEVELOPER GUIDE · v1</p>
-    <h1>MEP 開發文件</h1>
-    <p class="lede">MEP 是一個 webhook 轉發器:收 inbound 訊息 → 依 targets 展開 → 對每個 target 的 callback_url 發 HTTP POST,含簽章、去重、失敗重試。payload 是黑箱。本文給實作它的工程師,涵蓋資料模型、API、核心流程、可靠性、設定與測試。搭配 <code>mep-schema.json</code> 使用。</p>
-  </div>
-</header>
-
-<div class="wrap"><div class="shell">
-  <nav class="toc">
-    <p class="t">目錄</p>
-    <a href="#s1">1 · 概述與選型</a>
-    <a href="#s2">2 · 組件與資料流</a>
-    <a href="#s3">3 · 資料模型</a>
-    <a href="#s4">4 · Inbound API</a>
-    <a href="#s5">5 · Outbound 推送</a>
-    <a href="#s6">6 · 投遞狀態機與重試</a>
-    <a href="#s7">7 · 簽章與去重</a>
-    <a href="#s8">8 · 參與方與設定</a>
-    <a href="#s9">9 · 測試與上線</a>
-  </nav>
-  <main>
-
-  <!-- 1 -->
-  <section id="s1">
-    <h2><span class="no">01</span> 概述與技術選型</h2>
-    <p class="sub">MEP 很小,不要當大系統蓋。核心就三件事:收、拆、發。</p>
-    <p>技術棧不挑框架,任何能做以下三件事的組合都行:</p>
-    <ul>
-      <li><strong>一個 Web 框架</strong> — 提供 <code>POST /ingress</code> 接收端點(FastAPI / Express / Spring 皆可)。</li>
-      <li><strong>一個資料庫</strong> — 存 participants / messages / deliveries;建議用支援 <code>jsonb</code> 與 <code>SKIP LOCKED</code> 的 PostgreSQL,取投遞任務時好用。</li>
-      <li><strong>一個背景 worker</strong> — 非同步輪詢待投遞的 delivery 並發 POST。可以是同進程的排程執行緒、或獨立的 worker process,不需要引入重量級 MQ。</li>
-    </ul>
-    <p>不需要:訊息佇列中介軟體(DB 當 outbox 就夠)、微服務拆分、複雜編排引擎。單人開發核心約 2 至 3 週工作量。</p>
-    <div class="note a">
-      <span class="lbl">一條鐵律</span>
-      <p>接收(ingress)一定要<strong>快速回應</strong>並把工作丟給背景 worker,不可以在 ingress request 裡同步等待對 target 的 POST。下游一慢,會拖垮你對來源的回應。收→落地→回 202→背景推送,四步分開。</p>
+  <header class="cover">
+    <div class="wrap">
+      <p class="kick">MEP · DEVELOPER GUIDE · v1</p>
+      <h1>MEP 開發文件</h1>
+      <p class="lede">MEP 是一個 webhook 轉發器:收 inbound 訊息 → 依 targets 展開 → 對每個 target 的 callback_url 發 HTTP
+        POST,含簽章、去重、失敗重試。payload 是黑箱。本文給實作它的工程師,涵蓋資料模型、API、核心流程、可靠性、設定與測試。搭配 <code>mep-schema.json</code> 使用。</p>
     </div>
-  </section>
+  </header>
 
-  <!-- 2 -->
-  <section id="s2">
-    <h2><span class="no">02</span> 組件與資料流</h2>
-    <p class="sub">三個組件,一條 outbox 流。</p>
-    <ul>
-      <li><strong>Ingress API</strong> — 收 inbound、驗簽、驗封、落地成 messages + deliveries、回 202。</li>
-      <li><strong>Dispatcher (worker)</strong> — 撈 <code>status='pending'</code> 且到期的 delivery,簽章後 POST 到 target 的 callback_url,依結果更新狀態或排下次重試。</li>
-      <li><strong>Participants registry</strong> — participants 表,提供每個 endpoint 的 callback_url 與 secret。初期用 seed / config 即可,不需後台 UI。</li>
-    </ul>
-    <pre><span class="c"># 資料流</span>
+  <div class="wrap">
+    <div class="shell">
+      <nav class="toc">
+        <p class="t">目錄</p>
+        <a href="#s1">1 · 概述與選型</a>
+        <a href="#s2">2 · 組件與資料流</a>
+        <a href="#s3">3 · 資料模型</a>
+        <a href="#s4">4 · Inbound API</a>
+        <a href="#s5">5 · Outbound 推送</a>
+        <a href="#s6">6 · 投遞狀態機與重試</a>
+        <a href="#s7">7 · 簽章與去重</a>
+        <a href="#s8">8 · 參與方與設定</a>
+        <a href="#s9">9 · 測試與上線</a>
+      </nav>
+      <main>
+
+        <!-- 1 -->
+        <section id="s1">
+          <h2><span class="no">01</span> 概述與技術選型</h2>
+          <p class="sub">MEP 很小,不要當大系統蓋。核心就三件事:收、拆、發。</p>
+          <p>技術棧固定為 <strong>FastAPI + SQLite + SQLAlchemy</strong>,單一背景 worker:</p>
+          <ul>
+            <li><strong>FastAPI</strong> — 提供 <code>POST /ingress</code> 接收端點,並掛一個背景任務跑 dispatcher。</li>
+            <li><strong>SQLite + SQLAlchemy</strong> — 存 participants / messages /
+              deliveries。零維運(一個檔案),對目前四個參與方、低頻轉發的量綽綽有餘。用 SQLAlchemy 存取、schema 不綁死 SQLite 專屬特性,日後量大要換 PostgreSQL 時只需改連線字串
+              + 調整撈任務方式。</li>
+            <li><strong>單一背景 worker</strong> — dispatcher 用一個背景迴圈輪詢待投遞的 delivery、逐筆發 POST。不需要多 worker、不需要分散式鎖、不需要 MQ。
+            </li>
+          </ul>
+          <p>不需要:訊息佇列中介軟體(DB 當 outbox 就夠)、多 worker / 分散式鎖、微服務拆分。SQLite 記得開 <code>WAL</code> 模式並設
+            <code>busy_timeout</code>。單人開發核心約 2 至 3 週工作量。</p>
+          <div class="note a">
+            <span class="lbl">一條鐵律</span>
+            <p>接收(ingress)一定要<strong>快速回應</strong>並把工作丟給背景 worker,不可以在 ingress request 裡同步等待對 target 的
+              POST。下游一慢,會拖垮你對來源的回應。收→落地→回 202→背景推送,四步分開。</p>
+          </div>
+        </section>
+
+        <!-- 2 -->
+        <section id="s2">
+          <h2><span class="no">02</span> 組件與資料流</h2>
+          <p class="sub">三個組件,一條 outbox 流。</p>
+          <ul>
+            <li><strong>Ingress API</strong> — 收 inbound、驗簽、驗封、落地成 messages + deliveries、回 202。</li>
+            <li><strong>Dispatcher (worker)</strong> — 撈 <code>status='pending'</code> 且到期的 delivery,簽章後 POST 到 target 的
+              callback_url,依結果更新狀態或排下次重試。</li>
+            <li><strong>Participants registry</strong> — participants 表,提供每個 endpoint 的 callback_url 與 secret。初期用 seed /
+              config 即可,不需後台 UI。</li>
+          </ul>
+          <pre><span class="c"># 資料流</span>
 source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages + deliveries(pending)
                                                         │
                               [Dispatcher] ──輪詢到期的 pending──┘
@@ -122,52 +536,61 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
                                     ▼
                              target.callback_url  ──2xx──▶ delivery = success
                                                   ──失敗──▶ 重試 / dead</pre>
-    <p>outbox 模式的重點:<strong>訊息先落地成 deliveries,再由 dispatcher 非同步推送</strong>。接收與推送解耦,任一 target 慢或掛,只影響它自己那筆 delivery。</p>
-  </section>
+          <p>outbox 模式的重點:<strong>訊息先落地成 deliveries,再由 dispatcher 非同步推送</strong>。接收與推送解耦,任一 target 慢或掛,只影響它自己那筆
+            delivery。</p>
+        </section>
 
-  <!-- 3 -->
-  <section id="s3">
-    <h2><span class="no">03</span> 資料模型</h2>
-    <p class="sub">三張表。PostgreSQL DDL 如下,其他資料庫等價調整。</p>
-    <pre><span class="k">create table</span> participants (
-  endpoint      <span class="f">text</span> <span class="k">primary key</span>,          <span class="c">-- 如 LINE_EXTERNAL / ODOO / WEATHER_APP</span>
-  callback_url  <span class="f">text</span> <span class="k">not null</span>,             <span class="c">-- outbound 就 POST 到這</span>
-  secret        <span class="f">text</span> <span class="k">not null</span>,             <span class="c">-- HMAC 簽章用</span>
-  active        <span class="f">boolean</span> <span class="k">not null default</span> <span class="n">true</span>
-);
+        <!-- 3 -->
+        <section id="s3">
+          <h2><span class="no">03</span> 資料模型</h2>
+          <p class="sub">三張表,用 SQLAlchemy(2.0 style)定義,對應 SQLite。日後換 PostgreSQL 時模型幾乎不動,只需改連線與撈任務方式。</p>
+          <pre><span class="k">from</span> sqlalchemy <span class="k">import</span> String, Integer, Boolean, DateTime, ForeignKey, JSON, Index, func
+<span class="k">from</span> sqlalchemy.orm <span class="k">import</span> DeclarativeBase, Mapped, mapped_column
+<span class="k">import</span> datetime
 
-<span class="k">create table</span> messages (
-  id           <span class="f">bigint</span> <span class="k">generated always as identity primary key</span>,
-  source       <span class="f">jsonb</span> <span class="k">not null</span>,           <span class="c">-- 來源座標 {endpoint, line_*};endpoint 須已註冊,由 ingress 校驗</span>
-  payload      <span class="f">jsonb</span> <span class="k">not null</span>,            <span class="c">-- 黑箱,原樣存</span>
-  received_at  <span class="f">timestamptz</span> <span class="k">not null default</span> now()
-);
+<span class="k">class</span> <span class="f">Base</span>(DeclarativeBase): <span class="k">pass</span>
 
-<span class="k">create table</span> deliveries (
-  id            <span class="f">bigint</span> <span class="k">generated always as identity primary key</span>,
-  message_id    <span class="f">bigint</span> <span class="k">not null references</span> messages(id),
-  event_id      <span class="f">uuid</span> <span class="k">not null unique</span>,       <span class="c">-- outbound 帶出;重試沿用同一個(去重 key)</span>
-  endpoint      <span class="f">text</span> <span class="k">not null references</span> participants(endpoint),  <span class="c">-- 這筆的 target</span>
-  target        <span class="f">jsonb</span> <span class="k">not null</span>,            <span class="c">-- 完整 target 物件(含 send_mode、名單)</span>
-  status        <span class="f">text</span> <span class="k">not null default</span> <span class="s">'pending'</span>,  <span class="c">-- pending|success|failed|dead</span>
-  attempt_count <span class="f">int</span>  <span class="k">not null default</span> <span class="n">0</span>,
-  next_retry_at <span class="f">timestamptz</span>,                <span class="c">-- 下次可投遞時間</span>
-  last_response <span class="f">text</span>,                       <span class="c">-- 最後一次回應(截斷存)</span>
-  created_at    <span class="f">timestamptz</span> <span class="k">not null default</span> now()
-);
-<span class="k">create index on</span> deliveries (status, next_retry_at);  <span class="c">-- dispatcher 撈任務用</span></pre>
-    <div class="note warn">
-      <span class="lbl">關鍵:event_id 是 per-delivery,不是 per-message</span>
-      <p>一則 inbound 若有 N 個 target,就產生 N 筆 delivery,<strong>每筆一個獨立的 <code>event_id</code></strong>。重試同一筆 delivery 時沿用它自己的 event_id,下游才能正確去重。不要讓多個 target 共用同一個 event_id。</p>
-    </div>
-  </section>
+<span class="k">class</span> <span class="f">Participant</span>(Base):
+    __tablename__ = <span class="s">"participants"</span>
+    endpoint:     Mapped[str]  = mapped_column(String, primary_key=<span class="n">True</span>)   <span class="c"># LINE_EXTERNAL / ODOO / ...</span>
+    callback_url: Mapped[str]  = mapped_column(String, nullable=<span class="n">False</span>)     <span class="c"># outbound 就 POST 到這</span>
+    secret:       Mapped[str]  = mapped_column(String, nullable=<span class="n">False</span>)     <span class="c"># HMAC 簽章用</span>
+    active:       Mapped[bool] = mapped_column(Boolean, default=<span class="n">True</span>)
 
-  <!-- 4 -->
-  <section id="s4">
-    <h2><span class="no">04</span> Inbound API</h2>
-    <p class="sub"><span class="method">POST</span><code>/ingress</code> — 參與方送訊息進來。完整欄位校驗以 <code>mep-schema.json</code> 的 <code>InboundEnvelope</code> 為準。</p>
-    <p class="fname">Request</p>
-    <pre><span class="p">Content-Type</span>: application/json
+<span class="k">class</span> <span class="f">Message</span>(Base):
+    __tablename__ = <span class="s">"messages"</span>
+    id:          Mapped[int]  = mapped_column(Integer, primary_key=<span class="n">True</span>)   <span class="c"># SQLite 自動遞增</span>
+    source:      Mapped[dict] = mapped_column(JSON, nullable=<span class="n">False</span>)        <span class="c"># 來源座標 {endpoint, line_*}</span>
+    payload:     Mapped[dict] = mapped_column(JSON, nullable=<span class="n">False</span>)        <span class="c"># 黑箱,原樣存</span>
+    received_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
+
+<span class="k">class</span> <span class="f">Delivery</span>(Base):
+    __tablename__ = <span class="s">"deliveries"</span>
+    id:            Mapped[int]  = mapped_column(Integer, primary_key=<span class="n">True</span>)
+    message_id:    Mapped[int]  = mapped_column(ForeignKey(<span class="s">"messages.id"</span>), nullable=<span class="n">False</span>)
+    event_id:      Mapped[str]  = mapped_column(String, unique=<span class="n">True</span>, nullable=<span class="n">False</span>)  <span class="c"># per-delivery;重試沿用</span>
+    endpoint:      Mapped[str]  = mapped_column(ForeignKey(<span class="s">"participants.endpoint"</span>), nullable=<span class="n">False</span>)  <span class="c"># target</span>
+    target:        Mapped[dict] = mapped_column(JSON, nullable=<span class="n">False</span>)      <span class="c"># 完整 target 物件(含 send_mode、名單)</span>
+    status:        Mapped[str]  = mapped_column(String, default=<span class="s">"pending"</span>) <span class="c"># pending|success|failed|dead</span>
+    attempt_count: Mapped[int]  = mapped_column(Integer, default=<span class="n">0</span>)
+    next_retry_at: Mapped[datetime.datetime | <span class="n">None</span>] = mapped_column(DateTime, nullable=<span class="n">True</span>)
+    last_response: Mapped[str | <span class="n">None</span>] = mapped_column(String, nullable=<span class="n">True</span>)
+    created_at:    Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
+    __table_args__ = (Index(<span class="s">"ix_deliv_status_retry"</span>, <span class="s">"status"</span>, <span class="s">"next_retry_at"</span>),)  <span class="c"># dispatcher 撈任務用</span></pre>
+          <div class="note warn">
+            <span class="lbl">關鍵:event_id 是 per-delivery,不是 per-message</span>
+            <p>一則 inbound 若有 N 個 target,就產生 N 筆 delivery,<strong>每筆一個獨立的 <code>event_id</code></strong>。重試同一筆 delivery
+              時沿用它自己的 event_id,下游才能正確去重。不要讓多個 target 共用同一個 event_id。</p>
+          </div>
+        </section>
+
+        <!-- 4 -->
+        <section id="s4">
+          <h2><span class="no">04</span> Inbound API</h2>
+          <p class="sub"><span class="method">POST</span><code>/ingress</code> — 參與方送訊息進來。完整欄位校驗以
+            <code>mep-schema.json</code> 的 <code>InboundEnvelope</code> 為準。</p>
+          <p class="fname">Request</p>
+          <pre><span class="p">Content-Type</span>: application/json
 <span class="p">X-Signature</span>: sha256=&lt;hex&gt;
 <span class="p">X-Timestamp</span>: 1736500000
 
@@ -179,8 +602,8 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
   ],
   <span class="k">"payload"</span>: { <span class="c">/* 黑箱 */</span> }
 }</pre>
-    <p class="fname">Handler 流程</p>
-    <pre><span class="k">def</span> <span class="f">ingress</span>(req):
+          <p class="fname">Handler 流程</p>
+          <pre><span class="k">def</span> <span class="f">ingress</span>(req):
     raw = req.raw_body                              <span class="c"># 用原始 bytes 驗簽,不要先反序列化再組回去</span>
     msg = parse_json(raw)                           <span class="c"># 先解出 source.endpoint 以取對應 secret</span>
     p   = participants.get(msg.source.endpoint)
@@ -204,24 +627,45 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
         ids.append(eid)
     notify_dispatcher()                             <span class="c"># 或讓 dispatcher 自行輪詢</span>
     <span class="k">return</span> <span class="n">202</span>, { <span class="s">"event_ids"</span>: ids }</pre>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>回應</th><th>意義</th></tr></thead>
-      <tbody>
-        <tr><td class="hd"><code>202</code></td><td>已接收並排入投遞,回各 delivery 的 <code>event_ids</code></td></tr>
-        <tr><td class="hd"><code>400</code></td><td>JSON 格式錯誤或不符 schema</td></tr>
-        <tr><td class="hd"><code>401</code></td><td>簽章驗證失敗或 timestamp 過舊</td></tr>
-        <tr><td class="hd"><code>422</code></td><td>某 target 的 endpoint 未註冊/停用(整批退)</td></tr>
-      </tbody>
-    </table></div>
-    <p class="note a"><span class="lbl">LINE 定址校驗</span>schema 已靜態擋掉「LINE 缺 send_mode」「push 無名單」等;endpoint 是否註冊這種要查 DB 的,才在 handler 做。兩者都不過 → 整批 422,別半推半不推。</p>
-  </section>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>回應</th>
+                  <th>意義</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="hd"><code>202</code></td>
+                  <td>已接收並排入投遞,回各 delivery 的 <code>event_ids</code></td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>400</code></td>
+                  <td>JSON 格式錯誤或不符 schema</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>401</code></td>
+                  <td>簽章驗證失敗或 timestamp 過舊</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>422</code></td>
+                  <td>某 target 的 endpoint 未註冊/停用(整批退)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note a"><span class="lbl">LINE 定址校驗</span>schema 已靜態擋掉「LINE 缺 send_mode」「push 無名單」等;endpoint
+            是否註冊這種要查 DB 的,才在 handler 做。兩者都不過 → 整批 422,別半推半不推。</p>
+        </section>
 
-  <!-- 5 -->
-  <section id="s5">
-    <h2><span class="no">05</span> Outbound 推送</h2>
-    <p class="sub">Dispatcher 對每筆到期的 pending delivery,簽章後 POST 到 target 的 callback_url。body 是 <code>OutboundEnvelope</code>。</p>
-    <p class="fname">送出的 Request</p>
-    <pre><span class="k">POST</span> {target.callback_url}
+        <!-- 5 -->
+        <section id="s5">
+          <h2><span class="no">05</span> Outbound 推送</h2>
+          <p class="sub">Dispatcher 對每筆到期的 pending delivery,簽章後 POST 到 target 的 callback_url。body 是
+            <code>OutboundEnvelope</code>。</p>
+          <p class="fname">送出的 Request</p>
+          <pre><span class="k">POST</span> {target.callback_url}
 <span class="p">Content-Type</span>: application/json
 <span class="p">X-MEP-Event-Id</span>: 550e8400-e29b-41d4-a716-446655440000
 <span class="p">X-Signature</span>: sha256=&lt;hex&gt;
@@ -234,11 +678,11 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
   <span class="k">"payload"</span>: { <span class="c">/* 原封不動 */</span> },
   <span class="k">"occurred_at"</span>: <span class="s">"2026-09-10T08:30:00Z"</span>
 }</pre>
-    <p class="fname">Dispatcher 迴圈</p>
-    <pre><span class="k">while</span> running:
+          <p class="fname">Dispatcher 迴圈</p>
+          <pre><span class="k">while</span> running:
     rows = <span class="k">select</span> * <span class="k">from</span> deliveries
            <span class="k">where</span> status=<span class="s">'pending'</span> <span class="k">and</span> (next_retry_at <span class="k">is null or</span> next_retry_at &lt;= now())
-           <span class="k">order by</span> id <span class="k">limit</span> BATCH <span class="k">for update skip locked</span>;   <span class="c"># 多 worker 安全</span>
+           <span class="k">order by</span> id <span class="k">limit</span> BATCH;         <span class="c"># 單 worker,不需 FOR UPDATE SKIP LOCKED</span>
     <span class="k">for</span> d <span class="k">in</span> rows:
         p    = participants[d.endpoint]
         body = build_outbound(d)                    <span class="c"># event_id, source, target, payload, occurred_at</span>
@@ -257,117 +701,188 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
             <span class="k">else</span>:
                 d.status = <span class="s">'pending'</span>
                 d.next_retry_at = now() + backoff(d.attempt_count)
+        commit()                                    <span class="c"># 每筆各自 commit,寫入短、SQLite 鎖不卡</span>
     sleep(POLL_INTERVAL)</pre>
-    <p>收方(target 的 webhook)應<strong>先回 2xx 再處理</strong>。MEP 的判定只看 HTTP:2xx=成功,非 2xx 或逾時=失敗。門後怎麼解 payload、呼叫什麼 API,MEP 不管。</p>
-  </section>
+          <div class="note a">
+            <span class="lbl">為什麼單 worker 就夠</span>
+            <p>目前四個參與方、低頻轉發,一個背景迴圈輪詢即可跟上,不需要並行。而 SQLite 同一時間只允許一個寫入者,單 worker 正好避開寫入競爭——這是它適合此量級的原因。哪天量大到需要並行推送,再換
+              PostgreSQL + 多 worker + <code>FOR UPDATE SKIP LOCKED</code>;因為用 SQLAlchemy,資料層幾乎不用改。</p>
+          </div>
+          <p>收方(target 的 webhook)應<strong>先回 2xx 再處理</strong>。MEP 的判定只看 HTTP:2xx=成功,非 2xx 或逾時=失敗。門後怎麼解 payload、呼叫什麼
+            API,MEP 不管。</p>
+        </section>
 
-  <!-- 6 -->
-  <section id="s6">
-    <h2><span class="no">06</span> 投遞狀態機與重試</h2>
-    <p class="sub">每筆 delivery 走這個狀態機。重試是針對單筆 delivery,不影響其他。</p>
-    <div class="diagram">
-      <svg width="100%" viewBox="0 0 680 200" role="img" aria-label="delivery 狀態機:pending 成功轉 success,失敗未達上限排重試回 pending,失敗達上限轉 dead">
-        <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#52606D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-        <rect x="60" y="80" width="150" height="46" rx="8" fill="#EAF2F8" stroke="#2C6E9B" stroke-width="0.5"/>
-        <text x="135" y="103" text-anchor="middle" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="14" fill="#0C447C">pending</text>
-        <rect x="470" y="34" width="150" height="46" rx="8" fill="#E7F3EE" stroke="#17876A" stroke-width="0.5"/>
-        <text x="545" y="57" text-anchor="middle" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="14" fill="#085041">success</text>
-        <rect x="470" y="126" width="150" height="46" rx="8" fill="#FAEEED" stroke="#B0413A" stroke-width="0.5"/>
-        <text x="545" y="149" text-anchor="middle" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="14" fill="#791F1F">dead</text>
-        <path d="M212 96 L468 60" fill="none" stroke="#52606D" stroke-width="1" marker-end="url(#ar)"/>
-        <text x="330" y="66" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#52606D">回應 2xx</text>
-        <path d="M212 112 L468 146" fill="none" stroke="#52606D" stroke-width="1" marker-end="url(#ar)"/>
-        <text x="330" y="146" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#52606D">失敗且達上限</text>
-        <path d="M110 80 C90 40, 180 40, 160 78" fill="none" stroke="#52606D" stroke-width="1" marker-end="url(#ar)"/>
-        <text x="135" y="30" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#52606D">失敗未達上限 → 排 next_retry_at</text>
-      </svg>
-    </div>
-    <h3>指數退避</h3>
-    <p>失敗後間隔逐次拉長,達上限標記 <code>dead</code>。用固定間隔陣列最簡單、可預期:</p>
-    <pre><span class="c"># attempt_count 從 1 起算</span>
+        <!-- 6 -->
+        <section id="s6">
+          <h2><span class="no">06</span> 投遞狀態機與重試</h2>
+          <p class="sub">每筆 delivery 走這個狀態機。重試是針對單筆 delivery,不影響其他。</p>
+          <div class="diagram">
+            <svg width="100%" viewBox="0 0 680 200" role="img"
+              aria-label="delivery 狀態機:pending 成功轉 success,失敗未達上限排重試回 pending,失敗達上限轉 dead">
+              <defs>
+                <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+                  orient="auto-start-reverse">
+                  <path d="M2 1L8 5L2 9" fill="none" stroke="#52606D" stroke-width="1.5" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                </marker>
+              </defs>
+              <rect x="60" y="80" width="150" height="46" rx="8" fill="#EAF2F8" stroke="#2C6E9B" stroke-width="0.5" />
+              <text x="135" y="103" text-anchor="middle" dominant-baseline="central"
+                font-family="'JetBrains Mono',monospace" font-size="14" fill="#0C447C">pending</text>
+              <rect x="470" y="34" width="150" height="46" rx="8" fill="#E7F3EE" stroke="#17876A" stroke-width="0.5" />
+              <text x="545" y="57" text-anchor="middle" dominant-baseline="central"
+                font-family="'JetBrains Mono',monospace" font-size="14" fill="#085041">success</text>
+              <rect x="470" y="126" width="150" height="46" rx="8" fill="#FAEEED" stroke="#B0413A" stroke-width="0.5" />
+              <text x="545" y="149" text-anchor="middle" dominant-baseline="central"
+                font-family="'JetBrains Mono',monospace" font-size="14" fill="#791F1F">dead</text>
+              <path d="M212 96 L468 60" fill="none" stroke="#52606D" stroke-width="1" marker-end="url(#ar)" />
+              <text x="330" y="66" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12"
+                fill="#52606D">回應 2xx</text>
+              <path d="M212 112 L468 146" fill="none" stroke="#52606D" stroke-width="1" marker-end="url(#ar)" />
+              <text x="330" y="146" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12"
+                fill="#52606D">失敗且達上限</text>
+              <path d="M110 80 C90 40, 180 40, 160 78" fill="none" stroke="#52606D" stroke-width="1"
+                marker-end="url(#ar)" />
+              <text x="135" y="30" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12"
+                fill="#52606D">失敗未達上限 → 排 next_retry_at</text>
+            </svg>
+          </div>
+          <h3>指數退避</h3>
+          <p>失敗後間隔逐次拉長,達上限標記 <code>dead</code>。用固定間隔陣列最簡單、可預期:</p>
+          <pre><span class="c"># attempt_count 從 1 起算</span>
 RETRY_INTERVALS = [<span class="s">1m</span>, <span class="s">5m</span>, <span class="s">30m</span>, <span class="s">2h</span>, <span class="s">6h</span>, <span class="s">6h</span>, <span class="s">6h</span>]   <span class="c"># 7 次重試</span>
 MAX_ATTEMPTS    = <span class="n">8</span>                                <span class="c"># 首發 + 7 次重試,之後 dead</span>
 
 <span class="k">def</span> <span class="f">backoff</span>(attempt):
     <span class="k">return</span> RETRY_INTERVALS[min(attempt - <span class="n">1</span>, len(RETRY_INTERVALS) - <span class="n">1</span>)]</pre>
-    <p>狀態說明:<span class="st p">pending</span> 待投遞或待重試 · <span class="st s">success</span> 已 2xx,終態 · <span class="st d">dead</span> 重試耗盡,進失敗清單並告警,可人工在後台手動重推(重設為 pending)。</p>
-  </section>
+          <p>狀態說明:<span class="st p">pending</span> 待投遞或待重試 · <span class="st s">success</span> 已 2xx,終態 · <span
+              class="st d">dead</span> 重試耗盡,進失敗清單並告警,可人工在後台手動重推(重設為 pending)。</p>
+        </section>
 
-  <!-- 7 -->
-  <section id="s7">
-    <h2><span class="no">07</span> 簽章與去重</h2>
-    <p class="sub">webhook 唯二必要的安全與正確性機制。</p>
-    <h3>HMAC 簽章</h3>
-    <p>對 <code>timestamp + "." + 原始 body</code> 算 HMAC-SHA256,雙方用該 endpoint 註冊的 <code>secret</code>。inbound、outbound 同一套,方向相反。</p>
-    <pre><span class="k">def</span> <span class="f">sign</span>(secret, ts, raw_body):
+        <!-- 7 -->
+        <section id="s7">
+          <h2><span class="no">07</span> 簽章與去重</h2>
+          <p class="sub">webhook 唯二必要的安全與正確性機制。</p>
+          <h3>HMAC 簽章</h3>
+          <p>對 <code>timestamp + "." + 原始 body</code> 算 HMAC-SHA256,雙方用該 endpoint 註冊的
+            <code>secret</code>。inbound、outbound 同一套,方向相反。</p>
+          <pre><span class="k">def</span> <span class="f">sign</span>(secret, ts, raw_body):
     msg = <span class="s">f"{ts}.{raw_body}"</span>
     <span class="k">return</span> <span class="s">"sha256="</span> + hmac_sha256_hex(secret, msg)
 
 <span class="k">def</span> <span class="f">verify</span>(secret, ts, raw_body, header_sig):
     expected = sign(secret, ts, raw_body)
     <span class="k">return</span> constant_time_equals(expected, header_sig)   <span class="c"># 防時序攻擊</span></pre>
-    <ul>
-      <li>驗簽用<strong>原始 bytes</strong>,不要先反序列化 JSON 再重新序列化(欄位順序/空白會變,簽章對不上)。</li>
-      <li>一併檢查 <code>|now - ts| &lt; SIGNATURE_SKEW</code>(如 300 秒)拒收過舊請求,防重放。</li>
-    </ul>
-    <h3>去重:至少送達一次</h3>
-    <p>MEP 保證<strong>至少送達一次</strong>——若下游已處理但回應在網路上遺失,MEP 判定失敗會重推。因此:</p>
-    <ul>
-      <li><strong>MEP 側:</strong>重試同一筆 delivery 時,沿用它的 <code>event_id</code>(不重新產生)。</li>
-      <li><strong>下游側(契約要求):</strong>以 <code>event_id</code> 去重,收到重複的直接回 200 忽略。這條要寫進給各 target 的對接說明。</li>
-    </ul>
-  </section>
+          <ul>
+            <li>驗簽用<strong>原始 bytes</strong>,不要先反序列化 JSON 再重新序列化(欄位順序/空白會變,簽章對不上)。</li>
+            <li>一併檢查 <code>|now - ts| &lt; SIGNATURE_SKEW</code>(如 300 秒)拒收過舊請求,防重放。</li>
+          </ul>
+          <h3>去重:至少送達一次</h3>
+          <p>MEP 保證<strong>至少送達一次</strong>——若下游已處理但回應在網路上遺失,MEP 判定失敗會重推。因此:</p>
+          <ul>
+            <li><strong>MEP 側:</strong>重試同一筆 delivery 時,沿用它的 <code>event_id</code>(不重新產生)。</li>
+            <li><strong>下游側(契約要求):</strong>以 <code>event_id</code> 去重,收到重複的直接回 200 忽略。這條要寫進給各 target 的對接說明。</li>
+          </ul>
+        </section>
 
-  <!-- 8 -->
-  <section id="s8">
-    <h2><span class="no">08</span> 參與方與設定</h2>
-    <p class="sub">參與方初期用 seed;設定項用環境變數。</p>
-    <h3>註冊參與方(seed)</h3>
-    <pre><span class="k">insert into</span> participants (endpoint, callback_url, secret, active) <span class="k">values</span>
+        <!-- 8 -->
+        <section id="s8">
+          <h2><span class="no">08</span> 參與方與設定</h2>
+          <p class="sub">參與方初期用 seed;設定項用環境變數。</p>
+          <h3>註冊參與方(seed)</h3>
+          <pre><span class="k">insert into</span> participants (endpoint, callback_url, secret, active) <span class="k">values</span>
   (<span class="s">'LINE_EXTERNAL'</span>, <span class="s">'https://.../line-ext/webhook'</span>, <span class="s">'&lt;secret&gt;'</span>, <span class="n">true</span>),
   (<span class="s">'LINE_INTERNAL'</span>, <span class="s">'https://.../line-int/webhook'</span>, <span class="s">'&lt;secret&gt;'</span>, <span class="n">true</span>),
   (<span class="s">'ODOO'</span>,          <span class="s">'https://.../odoo/webhook'</span>,     <span class="s">'&lt;secret&gt;'</span>, <span class="n">true</span>),
   (<span class="s">'WEATHER_APP'</span>,   <span class="s">'https://.../weather/webhook'</span>,  <span class="s">'&lt;secret&gt;'</span>, <span class="n">true</span>);</pre>
-    <p>目前 <code>endpoint</code> 名稱在 <code>mep-schema.json</code> 是固定 enum,四個以內清楚好用。日後參與方變多時,把 schema 的 enum 放寬成一般字串、改由 participants 表當唯一真相,程式其餘不動。</p>
-    <h3>設定項</h3>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>設定</th><th>建議值</th><th>說明</th></tr></thead>
-      <tbody>
-        <tr><td class="hd"><code>SIGNATURE_SKEW</code></td><td>300s</td><td>timestamp 容許誤差,超過拒收</td></tr>
-        <tr><td class="hd"><code>OUTBOUND_TIMEOUT</code></td><td>10s</td><td>對 target POST 的逾時,超過算失敗</td></tr>
-        <tr><td class="hd"><code>MAX_ATTEMPTS</code></td><td>8</td><td>含首發;耗盡標 dead</td></tr>
-        <tr><td class="hd"><code>RETRY_INTERVALS</code></td><td>1m→6h</td><td>指數退避間隔</td></tr>
-        <tr><td class="hd"><code>DISPATCH_BATCH</code></td><td>50–100</td><td>每輪撈幾筆</td></tr>
-        <tr><td class="hd"><code>POLL_INTERVAL</code></td><td>1–5s</td><td>dispatcher 輪詢間隔</td></tr>
-      </tbody>
-    </table></div>
-    <p class="note warn"><span class="lbl">secret 保管</span>不要進版控。用環境變數或密鑰管理服務(Vault / Secrets Manager),participants.secret 存加密值或引用。</p>
-  </section>
+          <p>目前 <code>endpoint</code> 名稱在 <code>mep-schema.json</code> 是固定 enum,四個以內清楚好用。日後參與方變多時,把 schema 的 enum
+            放寬成一般字串、改由 participants 表當唯一真相,程式其餘不動。</p>
+          <h3>設定項</h3>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>設定</th>
+                  <th>建議值</th>
+                  <th>說明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="hd"><code>SIGNATURE_SKEW</code></td>
+                  <td>300s</td>
+                  <td>timestamp 容許誤差,超過拒收</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>OUTBOUND_TIMEOUT</code></td>
+                  <td>10s</td>
+                  <td>對 target POST 的逾時,超過算失敗</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>MAX_ATTEMPTS</code></td>
+                  <td>8</td>
+                  <td>含首發;耗盡標 dead</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>RETRY_INTERVALS</code></td>
+                  <td>1m→6h</td>
+                  <td>指數退避間隔</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>DISPATCH_BATCH</code></td>
+                  <td>50–100</td>
+                  <td>每輪撈幾筆</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>POLL_INTERVAL</code></td>
+                  <td>1–5s</td>
+                  <td>dispatcher 輪詢間隔</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>journal_mode</code></td>
+                  <td>WAL</td>
+                  <td>SQLite 開 WAL,提升讀寫並行、降低鎖等待</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>busy_timeout</code></td>
+                  <td>5000ms</td>
+                  <td>SQLite 遇鎖時等待而非立即報錯</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note warn"><span class="lbl">secret 保管</span>不要進版控。用環境變數或密鑰管理服務(Vault / Secrets
+            Manager),participants.secret 存加密值或引用。</p>
+        </section>
 
-  <!-- 9 -->
-  <section id="s9">
-    <h2><span class="no">09</span> 測試與上線</h2>
-    <p class="sub">重點測可靠性那幾條,別漏。</p>
-    <h3>測試要點</h3>
-    <ul>
-      <li><strong>單元:</strong>簽章 verify(正確 / 竄改 / 過期三種);<code>backoff()</code> 各 attempt 的間隔;schema 校驗(拿 <code>mep-schema.json</code> 跑各 target 組合,含 LINE 缺 send_mode、push 無名單應被擋)。</li>
-      <li><strong>整合:</strong>ingress → 正確建立 N 筆 deliveries;dispatcher 對 2xx / 非 2xx / 逾時 三種回應的狀態轉移;重試沿用同一 event_id;達上限轉 dead 並告警。</li>
-      <li><strong>去重:</strong>模擬「下游已處理但回應遺失」→ MEP 重推 → 下游用 event_id 擋掉,不重複處理。</li>
-      <li><strong>多 worker:</strong>兩個 dispatcher 同時跑,<code>for update skip locked</code> 不會重複投同一筆。</li>
-    </ul>
-    <h3>上線 checklist</h3>
-    <ul>
-      <li>participants seed 完成,callback_url 可達、secret 已設。</li>
-      <li>dispatcher worker 已啟動(獨立進程或排程)。</li>
-      <li>監控:deliveries 積壓數、<code>dead</code> 筆數、平均投遞延遲;<code>dead</code> 產生時告警。</li>
-      <li>各 target 端已知道對接契約:先回 2xx、以 event_id 去重、驗 X-Signature。</li>
-      <li>資料保留:messages / deliveries 會長,訂好歸檔策略(如熱資料 3–6 個月)。</li>
-    </ul>
-  </section>
+        <!-- 9 -->
+        <section id="s9">
+          <h2><span class="no">09</span> 測試與上線</h2>
+          <p class="sub">重點測可靠性那幾條,別漏。</p>
+          <h3>測試要點</h3>
+          <ul>
+            <li><strong>單元:</strong>簽章 verify(正確 / 竄改 / 過期三種);<code>backoff()</code> 各 attempt 的間隔;schema 校驗(拿
+              <code>mep-schema.json</code> 跑各 target 組合,含 LINE 缺 send_mode、push 無名單應被擋)。</li>
+            <li><strong>整合:</strong>ingress → 正確建立 N 筆 deliveries;dispatcher 對 2xx / 非 2xx / 逾時 三種回應的狀態轉移;重試沿用同一
+              event_id;達上限轉 dead 並告警。</li>
+            <li><strong>去重:</strong>模擬「下游已處理但回應遺失」→ MEP 重推 → 下游用 event_id 擋掉,不重複處理。</li>
+            <li><strong>狀態轉移:</strong>單 worker 下,delivery 成功後不再被撈、失敗後正確排入重試、達上限轉 dead;重試全程 event_id 不變。</li>
+          </ul>
+          <h3>上線 checklist</h3>
+          <ul>
+            <li>participants seed 完成,callback_url 可達、secret 已設。</li>
+            <li>dispatcher worker 已啟動(獨立進程或排程)。</li>
+            <li>監控:deliveries 積壓數、<code>dead</code> 筆數、平均投遞延遲;<code>dead</code> 產生時告警。</li>
+            <li>各 target 端已知道對接契約:先回 2xx、以 event_id 去重、驗 X-Signature。</li>
+            <li>資料保留:messages / deliveries 會長,訂好歸檔策略(如熱資料 3–6 個月)。</li>
+          </ul>
+        </section>
 
-  <footer>MEP 開發文件 v1 · 2026-09-10 · 搭配 mep-schema.json 與 MEP_webhook_fanout.html</footer>
+        <footer>MEP 開發文件 v1 · 2026-09-10 · 搭配 mep-schema.json 與 MEP_webhook_fanout.html</footer>
 
-  </main>
-</div></div>
+      </main>
+    </div>
+  </div>
 </body>
+
 </html>
