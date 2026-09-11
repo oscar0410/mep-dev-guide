@@ -499,17 +499,15 @@
         <section id="s1">
           <h2><span class="no">01</span> 概述與技術選型</h2>
           <p class="sub">MEP 很小,不要當大系統蓋。核心就三件事:收、拆、發。</p>
-          <p>技術棧固定為 <strong>FastAPI + SQLite + SQLAlchemy</strong>,單一背景 worker:</p>
+          <p>技術棧固定為 <strong>FastAPI + PostgreSQL 16 + SQLAlchemy</strong>:</p>
           <ul>
             <li><strong>FastAPI</strong> — 提供 <code>POST /ingress</code> 接收端點,並掛一個背景任務跑 dispatcher。</li>
-            <li><strong>SQLite + SQLAlchemy</strong> — 存 participants / messages /
-              deliveries。零維運(一個檔案),對目前四個參與方、低頻轉發的量綽綽有餘。用 SQLAlchemy 存取、schema 不綁死 SQLite 專屬特性,日後量大要換 PostgreSQL 時只需改連線字串
-              + 調整撈任務方式。</li>
-            <li><strong>單一背景 worker</strong> — dispatcher 用一個背景迴圈輪詢待投遞的 delivery、逐筆發 POST。不需要多 worker、不需要分散式鎖、不需要 MQ。
-            </li>
+            <li><strong>PostgreSQL 16 + SQLAlchemy</strong> — 存 participants / messages / deliveries。用
+              <code>jsonb</code> 存來源/目標/內容,用 <code>FOR UPDATE SKIP LOCKED</code> 安全地撈投遞任務。以 SQLAlchemy 存取。</li>
+            <li><strong>背景 dispatcher</strong> — 一個背景迴圈輪詢待投遞的 delivery、逐筆發 POST。撈任務用 <code>SKIP LOCKED</code>,天然支援多
+              worker;以目前的量先跑單一 worker 即可,要並行時把 worker 數調大、程式不用改。</li>
           </ul>
-          <p>不需要:訊息佇列中介軟體(DB 當 outbox 就夠)、多 worker / 分散式鎖、微服務拆分。SQLite 記得開 <code>WAL</code> 模式並設
-            <code>busy_timeout</code>。單人開發核心約 2 至 3 週工作量。</p>
+          <p>不需要:訊息佇列中介軟體(DB 當 outbox 就夠)、微服務拆分、複雜編排引擎。單人開發核心約 2 至 3 週工作量。</p>
           <div class="note a">
             <span class="lbl">一條鐵律</span>
             <p>接收(ingress)一定要<strong>快速回應</strong>並把工作丟給背景 worker,不可以在 ingress request 裡同步等待對 target 的
@@ -543,10 +541,11 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
         <!-- 3 -->
         <section id="s3">
           <h2><span class="no">03</span> 資料模型</h2>
-          <p class="sub">三張表,用 SQLAlchemy(2.0 style)定義,對應 SQLite。日後換 PostgreSQL 時模型幾乎不動,只需改連線與撈任務方式。</p>
-          <pre><span class="k">from</span> sqlalchemy <span class="k">import</span> String, Integer, Boolean, DateTime, ForeignKey, JSON, Index, func
+          <p class="sub">三張表,用 SQLAlchemy(2.0 style)定義,對應 PostgreSQL 16(jsonb / uuid / timestamptz)。</p>
+          <pre><span class="k">from</span> sqlalchemy <span class="k">import</span> String, BigInteger, Integer, Boolean, DateTime, ForeignKey, Index, func
+<span class="k">from</span> sqlalchemy.dialects.postgresql <span class="k">import</span> JSONB, UUID
 <span class="k">from</span> sqlalchemy.orm <span class="k">import</span> DeclarativeBase, Mapped, mapped_column
-<span class="k">import</span> datetime
+<span class="k">import</span> datetime, uuid
 
 <span class="k">class</span> <span class="f">Base</span>(DeclarativeBase): <span class="k">pass</span>
 
@@ -559,28 +558,48 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
 
 <span class="k">class</span> <span class="f">Message</span>(Base):
     __tablename__ = <span class="s">"messages"</span>
-    id:          Mapped[int]  = mapped_column(Integer, primary_key=<span class="n">True</span>)   <span class="c"># SQLite 自動遞增</span>
-    source:      Mapped[dict] = mapped_column(JSON, nullable=<span class="n">False</span>)        <span class="c"># 來源座標 {endpoint, line_*}</span>
-    payload:     Mapped[dict] = mapped_column(JSON, nullable=<span class="n">False</span>)        <span class="c"># 黑箱,原樣存</span>
-    received_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
+    id:          Mapped[int]  = mapped_column(BigInteger, primary_key=<span class="n">True</span>)  <span class="c"># identity</span>
+    source:      Mapped[dict] = mapped_column(JSONB, nullable=<span class="n">False</span>)        <span class="c"># 來源座標 {endpoint, line_*}</span>
+    payload:     Mapped[dict] = mapped_column(JSONB, nullable=<span class="n">False</span>)        <span class="c"># 黑箱,原樣存</span>
+    received_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=<span class="n">True</span>), server_default=func.now())
 
 <span class="k">class</span> <span class="f">Delivery</span>(Base):
     __tablename__ = <span class="s">"deliveries"</span>
-    id:            Mapped[int]  = mapped_column(Integer, primary_key=<span class="n">True</span>)
+    id:            Mapped[int]  = mapped_column(BigInteger, primary_key=<span class="n">True</span>)
     message_id:    Mapped[int]  = mapped_column(ForeignKey(<span class="s">"messages.id"</span>), nullable=<span class="n">False</span>)
-    event_id:      Mapped[str]  = mapped_column(String, unique=<span class="n">True</span>, nullable=<span class="n">False</span>)  <span class="c"># per-delivery;重試沿用</span>
+    event_id:      Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=<span class="n">True</span>), unique=<span class="n">True</span>, default=uuid.uuid4)  <span class="c"># per-delivery;重試沿用</span>
     endpoint:      Mapped[str]  = mapped_column(ForeignKey(<span class="s">"participants.endpoint"</span>), nullable=<span class="n">False</span>)  <span class="c"># target</span>
-    target:        Mapped[dict] = mapped_column(JSON, nullable=<span class="n">False</span>)      <span class="c"># 完整 target 物件(含 send_mode、名單)</span>
+    target:        Mapped[dict] = mapped_column(JSONB, nullable=<span class="n">False</span>)      <span class="c"># 完整 target 物件(含 send_mode、名單)</span>
     status:        Mapped[str]  = mapped_column(String, default=<span class="s">"pending"</span>) <span class="c"># pending|success|failed|dead</span>
     attempt_count: Mapped[int]  = mapped_column(Integer, default=<span class="n">0</span>)
-    next_retry_at: Mapped[datetime.datetime | <span class="n">None</span>] = mapped_column(DateTime, nullable=<span class="n">True</span>)
+    next_retry_at: Mapped[datetime.datetime | <span class="n">None</span>] = mapped_column(DateTime(timezone=<span class="n">True</span>), nullable=<span class="n">True</span>)
     last_response: Mapped[str | <span class="n">None</span>] = mapped_column(String, nullable=<span class="n">True</span>)
-    created_at:    Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at:    Mapped[datetime.datetime] = mapped_column(DateTime(timezone=<span class="n">True</span>), server_default=func.now())
     __table_args__ = (Index(<span class="s">"ix_deliv_status_retry"</span>, <span class="s">"status"</span>, <span class="s">"next_retry_at"</span>),)  <span class="c"># dispatcher 撈任務用</span></pre>
           <div class="note warn">
             <span class="lbl">關鍵:event_id 是 per-delivery,不是 per-message</span>
             <p>一則 inbound 若有 N 個 target,就產生 N 筆 delivery,<strong>每筆一個獨立的 <code>event_id</code></strong>。重試同一筆 delivery
               時沿用它自己的 event_id,下游才能正確去重。不要讓多個 target 共用同一個 event_id。</p>
+          </div>
+
+          <h3>Schema 管理:Alembic</h3>
+          <p>schema 一律用 <strong>Alembic</strong> 管,<strong>不用 <code>create_all</code></strong>——上線後改欄位需要「安全地改已存在的表」,那是
+            create_all 做不到的(它只補建缺的表、不改既有表)。流程:</p>
+          <pre><span class="c"># 一次性初始化</span>
+alembic init migrations
+<span class="c"># 在 migrations/env.py 把 target_metadata 指到 Base.metadata;</span>
+<span class="c"># 連線字串走環境變數 DATABASE_URL,不寫進 alembic.ini</span>
+
+<span class="c"># 產生初版 migration(讀 model 自動比對)並套用</span>
+alembic revision --autogenerate -m <span class="s">"init schema"</span>
+alembic upgrade head
+
+<span class="c"># 日後改 model 後,同樣兩步產生「只改差異」的腳本</span>
+alembic revision --autogenerate -m <span class="s">"add xxx"</span>
+alembic upgrade head</pre>
+          <div class="note warn">
+            <span class="lbl">autogenerate 要人工看過</span>
+            <p>它對加/刪表、加/刪欄位偵測得好,但改型別、某些 JSONB/索引細節偵測不完整。產生的腳本套用前先看一眼,別無腦 <code>upgrade</code>。</p>
           </div>
         </section>
 
@@ -682,7 +701,7 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
           <pre><span class="k">while</span> running:
     rows = <span class="k">select</span> * <span class="k">from</span> deliveries
            <span class="k">where</span> status=<span class="s">'pending'</span> <span class="k">and</span> (next_retry_at <span class="k">is null or</span> next_retry_at &lt;= now())
-           <span class="k">order by</span> id <span class="k">limit</span> BATCH;         <span class="c"># 單 worker,不需 FOR UPDATE SKIP LOCKED</span>
+           <span class="k">order by</span> id <span class="k">limit</span> BATCH <span class="k">for update skip locked</span>;   <span class="c"># PG:多 worker 也安全</span>
     <span class="k">for</span> d <span class="k">in</span> rows:
         p    = participants[d.endpoint]
         body = build_outbound(d)                    <span class="c"># event_id, source, target, payload, occurred_at</span>
@@ -701,12 +720,12 @@ source ──POST /ingress──▶ [Ingress API] ──寫入──▶ messages
             <span class="k">else</span>:
                 d.status = <span class="s">'pending'</span>
                 d.next_retry_at = now() + backoff(d.attempt_count)
-        commit()                                    <span class="c"># 每筆各自 commit,寫入短、SQLite 鎖不卡</span>
+        commit()                                    <span class="c"># 每筆各自 commit</span>
     sleep(POLL_INTERVAL)</pre>
           <div class="note a">
-            <span class="lbl">為什麼單 worker 就夠</span>
-            <p>目前四個參與方、低頻轉發,一個背景迴圈輪詢即可跟上,不需要並行。而 SQLite 同一時間只允許一個寫入者,單 worker 正好避開寫入競爭——這是它適合此量級的原因。哪天量大到需要並行推送,再換
-              PostgreSQL + 多 worker + <code>FOR UPDATE SKIP LOCKED</code>;因為用 SQLAlchemy,資料層幾乎不用改。</p>
+            <span class="lbl">worker 數:先單一,可平滑擴充</span>
+            <p>撈任務用 <code>FOR UPDATE SKIP LOCKED</code>,PostgreSQL 保證多個 worker 同時撈不會拿到同一筆。以目前四個參與方、低頻轉發的量,先跑<strong>單一
+                worker</strong> 就夠;哪天量大,把 worker 數調大即可,程式與資料層都不用改——這是選 PostgreSQL 相對 SQLite 的主要好處之一。</p>
           </div>
           <p>收方(target 的 webhook)應<strong>先回 2xx 再處理</strong>。MEP 的判定只看 HTTP:2xx=成功,非 2xx 或逾時=失敗。門後怎麼解 payload、呼叫什麼
             API,MEP 不管。</p>
@@ -839,14 +858,19 @@ MAX_ATTEMPTS    = <span class="n">8</span>                                <span 
                   <td>dispatcher 輪詢間隔</td>
                 </tr>
                 <tr>
-                  <td class="hd"><code>journal_mode</code></td>
-                  <td>WAL</td>
-                  <td>SQLite 開 WAL,提升讀寫並行、降低鎖等待</td>
+                  <td class="hd"><code>WORKER_COUNT</code></td>
+                  <td>1</td>
+                  <td>dispatcher worker 數;量大時調高(SKIP LOCKED 保證安全)</td>
                 </tr>
                 <tr>
-                  <td class="hd"><code>busy_timeout</code></td>
-                  <td>5000ms</td>
-                  <td>SQLite 遇鎖時等待而非立即報錯</td>
+                  <td class="hd"><code>DATABASE_URL</code></td>
+                  <td>—</td>
+                  <td>PG 連線字串,如 postgresql+psycopg://user:pw@host:5432/db(走環境變數)</td>
+                </tr>
+                <tr>
+                  <td class="hd"><code>DB_POOL_SIZE</code></td>
+                  <td>5–10</td>
+                  <td>SQLAlchemy 連線池大小</td>
                 </tr>
               </tbody>
             </table>
@@ -866,10 +890,12 @@ MAX_ATTEMPTS    = <span class="n">8</span>                                <span 
             <li><strong>整合:</strong>ingress → 正確建立 N 筆 deliveries;dispatcher 對 2xx / 非 2xx / 逾時 三種回應的狀態轉移;重試沿用同一
               event_id;達上限轉 dead 並告警。</li>
             <li><strong>去重:</strong>模擬「下游已處理但回應遺失」→ MEP 重推 → 下游用 event_id 擋掉,不重複處理。</li>
-            <li><strong>狀態轉移:</strong>單 worker 下,delivery 成功後不再被撈、失敗後正確排入重試、達上限轉 dead;重試全程 event_id 不變。</li>
+            <li><strong>狀態轉移與並行:</strong>delivery 成功後不再被撈、失敗後正確排入重試、達上限轉 dead,重試全程 event_id 不變;兩個 worker 同時跑時
+              <code>FOR UPDATE SKIP LOCKED</code> 不會重複投同一筆。</li>
           </ul>
           <h3>上線 checklist</h3>
           <ul>
+            <li>資料庫已建(同事開空庫 + 帳號),<code>alembic upgrade head</code> 已套用,三張表就緒。</li>
             <li>participants seed 完成,callback_url 可達、secret 已設。</li>
             <li>dispatcher worker 已啟動(獨立進程或排程)。</li>
             <li>監控:deliveries 積壓數、<code>dead</code> 筆數、平均投遞延遲;<code>dead</code> 產生時告警。</li>
